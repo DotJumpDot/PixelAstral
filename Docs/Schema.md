@@ -1,88 +1,162 @@
 # PixelAstral Database Schema
 
 ## Table of Contents
-- [Database Schema](#database-schema)
-  - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
-  - [Core Entities](#core-entities)
-  - [Entity Relationships](#entity-relationships)
-  - [SQL Schema](#sql-schema)
-    - [Create Tables](#create-tables)
-  - [Sample Data](#sample-data)
-    - [Database Type] Sample Data
-  - [Data Types Notes](#data-types-notes)
-  - [Migration Notes](#migration-notes)
+- [Overview](#overview)
+- [Core Entities](#core-entities)
+- [Entity Relationships](#entity-relationships)
+- [SQL Schema](#sql-schema)
+- [Migration Notes](#migration-notes)
 
 ## Overview
 
-This document describes complete database schema for PixelAstral, including all entities, relationships, and sample data.
+This document describes the complete database schema for PixelAstral, a retro-themed collection app for managing games, movies, manga, and novels.
 
 ## Core Entities
 
-> **Note**: Update this section when database structure is defined.
+### Users
+| Column      | Type      | Nullable | Description                              |
+| ----------- | --------- | -------- | ---------------------------------------- |
+| id          | UUID      | No       | Primary key                              |
+| email       | TEXT      | No       | User email (unique)                       |
+| password_hash | TEXT     | No       | Bcrypt hashed password                    |
+| created_at  | TIMESTAMP | No       | Account creation timestamp                |
+| updated_at  | TIMESTAMP | Yes      | Last update timestamp                     |
 
-### Entity 1
-| Column             | Type     | Nullable | Description                                                |
-| ------------------ | -------- | -------- | ---------------------------------------------------------- |
-| id                 | int/uuid | No       | Primary key, auto-incremented/unique ID                    |
-| [other columns]  | types    | Yes/No   | Descriptions                                               |
+### Games
+| Column     | Type      | Nullable | Description                        |
+| ---------- | --------- | -------- | ---------------------------------- |
+| id         | UUID      | No       | Primary key                        |
+| user_id    | UUID      | No       | Foreign key to users.id            |
+| title      | TEXT      | No       | Game title                         |
+| genre      | TEXT      | Yes      | Game genre (Action, RPG, etc.)     |
+| rating     | INTEGER   | Yes      | Rating 1-5                        |
+| status     | TEXT      | No       | Playing, Completed, Plan to Play, Dropped |
+| notes      | TEXT      | Yes      | User notes about the game          |
+| created_at | TIMESTAMP | No       | Creation timestamp                 |
+| updated_at | TIMESTAMP | Yes      | Last update timestamp               |
 
-### Entity 2
-| Column             | Type     | Nullable | Description                                                |
-| ------------------ | -------- | -------- | ---------------------------------------------------------- |
-| [columns...]       | types    | Yes/No   | Descriptions                                               |
+### Movies
+| Column     | Type      | Nullable | Description                        |
+| ---------- | --------- | -------- | ---------------------------------- |
+| id         | UUID      | No       | Primary key                        |
+| user_id    | UUID      | No       | Foreign key to users.id            |
+| title      | TEXT      | No       | Movie title                        |
+| genre      | TEXT      | Yes      | Movie genre (Action, Drama, etc.)   |
+| rating     | INTEGER   | Yes      | Rating 1-5                        |
+| status     | TEXT      | No       | Watching, Completed, Plan to Watch, Dropped |
+| notes      | TEXT      | Yes      | User notes about the movie          |
+| created_at | TIMESTAMP | No       | Creation timestamp                 |
+| updated_at | TIMESTAMP | Yes      | Last update timestamp               |
+
+### Manga
+| Column     | Type      | Nullable | Description                        |
+| ---------- | --------- | -------- | ---------------------------------- |
+| id         | UUID      | No       | Primary key                        |
+| user_id    | UUID      | No       | Foreign key to users.id            |
+| title      | TEXT      | No       | Manga title                        |
+| genre      | TEXT      | Yes      | Manga genre (Shonen, Seinen, etc.) |
+| rating     | INTEGER   | Yes      | Rating 1-5                        |
+| status     | TEXT      | No       | Reading, Completed, Plan to Read, Dropped |
+| notes      | TEXT      | Yes      | User notes about the manga         |
+| created_at | TIMESTAMP | No       | Creation timestamp                 |
+| updated_at | TIMESTAMP | Yes      | Last update timestamp               |
+
+### Novels
+| Column     | Type      | Nullable | Description                        |
+| ---------- | --------- | -------- | ---------------------------------- |
+| id         | UUID      | No       | Primary key                        |
+| user_id    | UUID      | No       | Foreign key to users.id            |
+| title      | TEXT      | No       | Novel title                        |
+| genre      | TEXT      | Yes      | Novel genre (Fantasy, Sci-Fi, etc.) |
+| rating     | INTEGER   | Yes      | Rating 1-5                        |
+| status     | TEXT      | No       | Reading, Completed, Plan to Read, Dropped |
+| notes      | TEXT      | Yes      | User notes about the novel         |
+| created_at | TIMESTAMP | No       | Creation timestamp                 |
+| updated_at | TIMESTAMP | Yes      | Last update timestamp               |
 
 ## Entity Relationships
 
 ```
-entity1 (1) ──── (many) entity2
-entity1 (1) ──── (1) entity3
+users (1) ──── (many) games
+users (1) ──── (many) movies
+users (1) ──── (many) manga
+users (1) ──── (many) novels
 ```
+
+Each user can have multiple games, movies, manga, and novels. Each collection item belongs to exactly one user.
 
 ## SQL Schema
 
 ### Create Tables
 
-> **Note**: Update this section with actual database schema when database is implemented.
-
-For [Database Type], use following adapted schema:
-
 ```sql
--- Entity 1 table
-CREATE TABLE entity1 (
-    id SERIAL PRIMARY KEY,
-    uuid TEXT NOT NULL UNIQUE,
-    -- other columns
+-- Users table
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP
 );
 
--- Entity 2 table
-CREATE TABLE entity2 (
-    id TEXT PRIMARY KEY,
-    entity1_uuid TEXT,
-    -- other columns
-    FOREIGN KEY (entity1_uuid) REFERENCES entity1(uuid)
+-- Games table
+CREATE TABLE IF NOT EXISTS games (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    genre TEXT,
+    rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+    status TEXT NOT NULL CHECK (status IN ('Playing', 'Completed', 'Plan to Play', 'Dropped')),
+    notes TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
 );
+
+-- Movies table
+CREATE TABLE IF NOT EXISTS movies (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    genre TEXT,
+    rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+    status TEXT NOT NULL CHECK (status IN ('Watching', 'Completed', 'Plan to Watch', 'Dropped')),
+    notes TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+-- Manga table
+CREATE TABLE IF NOT EXISTS manga (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    genre TEXT,
+    rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+    status TEXT NOT NULL CHECK (status IN ('Reading', 'Completed', 'Plan to Read', 'Dropped')),
+    notes TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+-- Novels table
+CREATE TABLE IF NOT EXISTS novels (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    genre TEXT,
+    rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+    status TEXT NOT NULL CHECK (status IN ('Reading', 'Completed', 'Plan to Read', 'Dropped')),
+    notes TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+-- Indexes for better query performance
+CREATE INDEX IF NOT EXISTS idx_games_user_id ON games(user_id);
+CREATE INDEX IF NOT EXISTS idx_movies_user_id ON movies(user_id);
+CREATE INDEX IF NOT EXISTS idx_manga_user_id ON manga(user_id);
+CREATE INDEX IF NOT EXISTS idx_novels_user_id ON novels(user_id);
 ```
-
-## Sample Data
-
-### [Database Type] Sample Data
-
-```sql
--- Insert sample data
-INSERT INTO entity1 (uuid, name, created_at)
-VALUES ('550e8400-e29b-41d4-a716-446655440000', 'Sample Name', CURRENT_TIMESTAMP);
-```
-
-## Data Types Notes
-
-- **UUID**: Stored as TEXT for simplicity
-- **Arrays**: Stored as native database arrays
-- **JSON**: Stored as JSONB for performance
-- **Boolean**: Stored as BOOLEAN
-- **Datetime**: Stored as TIMESTAMP with CURRENT_TIMESTAMP defaults
 
 ## Migration Notes
 
@@ -92,3 +166,4 @@ When deploying to production:
 2. Backup existing data
 3. Add proper constraints and indexes
 4. Test migrations in staging first
+5. The `gen_random_uuid()` function requires the `pgcrypto` extension in PostgreSQL
